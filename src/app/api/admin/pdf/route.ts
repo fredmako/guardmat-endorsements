@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { generateEndorsementPDF, generateBulkEndorsePDF } from '@/lib/endorsementPdf';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,53 +21,50 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
     const startDate = searchParams.get('start') || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
     const endDate = searchParams.get('end') || new Date().toISOString().slice(0, 10);
 
-    const { data: endorsements, error } = await supabaseAdmin
+    // Single endorsement PDF
+    if (id) {
+      const { data: endorsement, error } = await supabaseAdmin
+        .from('endorsements')
+        .select('*')
+        .eq('endorsement_id', id)
+        .single();
+
+      if (error || !endorsement) {
+        return NextResponse.json({ error: 'Endorsement not found' }, { status: 404 });
+      }
+
+      const pdfBytes = await generateEndorsementPDF(endorsement);
+
+      return new NextResponse(Buffer.from(pdfBytes), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="endorsement-${id}.pdf"`,
+        },
+      });
+    }
+
+    // Bulk PDF report
+    const { data: endorsements, error: listError } = await supabaseAdmin
       .from('endorsements')
       .select('*')
-      .eq('verified', true)
       .gte('created_at', startDate)
       .lte('created_at', endDate)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (listError) throw listError;
 
-    const total = endorsements?.length || 0;
-    const bySchool: Record<string, number> = {};
-    const byMonth: Record<string, number> = {};
+    const pdfBytes = await generateBulkEndorsePDF(endorsements || []);
 
-    (endorsements || []).forEach((e: any) => {
-      bySchool[e.school_name] = (bySchool[e.school_name] || 0) + 1;
-      const month = e.created_at.slice(0, 7);
-      byMonth[month] = (byMonth[month] || 0) + 1;
-    });
-
-    const reportData = {
-      title: 'Guardmat Community School Feeding Initiative',
-      subtitle: 'Endorsement Report',
-      period: `${startDate} to ${endDate}`,
-      generatedAt: new Date().toISOString(),
-      summary: {
-        totalEndorsements: total,
-        participatingSchools: Object.keys(bySchool).length,
-        flaggedEndorsements: (endorsements || []).filter((e: any) => e.flagged).length,
+    return new NextResponse(Buffer.from(pdfBytes), {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="guardmat-endorsements-${startDate}-${endDate}.pdf"`,
       },
-      bySchool,
-      byMonth,
-      endorsements: (endorsements || []).map((e: any) => ({
-        endorsementId: e.endorsement_id,
-        schoolName: e.school_name,
-        parentName: e.parent_name,
-        date: e.created_at.slice(0, 10),
-        verified: e.verified,
-        flagged: e.flagged,
-      })),
-      disclaimer: 'This report is generated automatically. Endorsements represent parent/community support, not official school approval.',
-    };
-
-    return NextResponse.json(reportData);
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
