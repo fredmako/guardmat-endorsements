@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+:root {
+  --guardmat-green: #1a5632;
+  --guardmat-gold: #d4a017;
+  --guardmat-light: #f0fdf4;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.guardmat-gradient {
+  background: linear-gradient(135deg, #1a5632 0%, #2d7a4a 50%, #1a5632 100%);
+}
+
+.guardmat-gold-gradient {
+  background: linear-gradient(135deg, #d4a017 0%, #f0c040 50%, #d4a017 100%);
+}
