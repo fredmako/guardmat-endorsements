@@ -2,18 +2,26 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 function CallbackHandler() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const code = searchParams.get("code");
-    if (!code) {
+    // Supabase implicit flow puts tokens in the URL hash, not query params
+    const hash = window.location.hash;
+    if (!hash) {
+      setError("No authorization code received");
+      return;
+    }
+
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get("access_token");
+
+    if (!accessToken) {
       setError("No authorization code received");
       return;
     }
@@ -27,7 +35,11 @@ function CallbackHandler() {
       return;
     }
 
-    supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+    // Set the session from the hash token
+    supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: params.get("refresh_token") || "",
+    }).then(({ data, error }) => {
       if (error) {
         setError(error.message);
         return;
@@ -40,6 +52,8 @@ function CallbackHandler() {
           body: JSON.stringify({ email: userEmail }),
         }).then((res) => res.json()).then((result) => {
           if (result.isAdmin) {
+            // Clear the hash before redirecting
+            window.location.hash = "";
             router.push("/admin");
           } else {
             setError("Not authorized as admin");
@@ -49,7 +63,7 @@ function CallbackHandler() {
         setError("Failed to create session");
       }
     });
-  }, [searchParams, router]);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
