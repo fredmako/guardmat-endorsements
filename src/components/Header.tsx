@@ -2,14 +2,36 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!supabaseUrl || !supabaseAnonKey) return;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        const userEmail = data.session.user.email;
+        fetch("/api/admin/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmail }),
+        }).then((res) => res.json()).then((result) => {
+          if (result.isAdmin) setIsAdmin(true);
+        });
+      }
+    });
   }, []);
 
   return (
@@ -53,6 +75,16 @@ export default function Header() {
             >
               Stats
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className={`text-sm font-medium transition-colors ${
+                  scrolled ? "text-gray-600 hover:text-gray-900" : "text-white/80 hover:text-white"
+                }`}
+              >
+                Admin
+              </Link>
+            )}
             <Link
               href="/endorse"
               className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors"

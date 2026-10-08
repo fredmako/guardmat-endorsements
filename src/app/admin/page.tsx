@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -44,10 +46,23 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
+  const pathname = usePathname();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
   const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+
+  const tabs = [
+    { id: "dashboard", label: "Dashboard", href: "/admin" },
+    { id: "users", label: "Users", href: "/admin/users" },
+    { id: "analytics", label: "Analytics", href: "/admin/analytics" },
+    { id: "campaigns", label: "Campaigns", href: "/admin/campaigns" },
+    { id: "reports", label: "Reports", href: "/admin/reports" },
+    { id: "schools", label: "Schools", href: "/admin/schools" },
+    { id: "settings", label: "Settings", href: "/admin/settings" },
+  ];
+
+  const activeTab = tabs.find(t => pathname === t.href)?.id || "dashboard";
 
   async function handleGoogleLogin() {
     if (!supabase) return;
@@ -293,6 +308,24 @@ export default function AdminPage() {
                 Logout
               </button>
             </div>
+          </div>
+
+          <div className="border-b border-gray-200 mb-8">
+            <nav className="flex gap-6">
+              {tabs.map((tab) => (
+                <Link
+                  key={tab.id}
+                  href={tab.href}
+                  className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? "border-green-600 text-green-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              ))}
+            </nav>
           </div>
 
           {stats && (
