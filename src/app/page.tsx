@@ -79,6 +79,12 @@ export default function HomePage() {
               >
                 Verify Endorsement
               </Link>
+              <Link
+                href="/admin"
+                className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg text-lg transition-colors border border-white/30"
+              >
+                Admin Dashboard
+              </Link>
             </div>
           </div>
         </section>
