@@ -19,3 +19,5 @@ export const RATE_LIMIT_MAX_REQUESTS = 5;
 
 export const OTP_LENGTH = 6;
 export const OTP_EXPIRY_MINUTES = 10;
+
+export const LOYALTY_POINTS_PER_ENDORSEMENT = 10;
