@@ -27,7 +27,7 @@ function CallbackHandler() {
       return;
     }
 
-    supabase.auth.getSession().then(({ data, error }) => {
+    supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
       if (error) {
         setError(error.message);
         return;
