@@ -22,13 +22,13 @@ export default function EndorsePage() {
   const [selectedSchool, setSelectedSchool] = useState<string>("");
   const [parentName, setParentName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [endorsementId, setEndorsementId] = useState("");
-  const [devOtp, setDevOtp] = useState("");
 
   useEffect(() => {
     fetch("/api/schools")
@@ -39,7 +39,7 @@ export default function EndorsePage() {
 
   async function sendOtp() {
     setError("");
-    if (!selectedSchool || !parentName || !phone || !consent) {
+    if (!selectedSchool || !parentName || !phone || !email || !consent) {
       setError("Please fill in all required fields");
       return;
     }
@@ -48,11 +48,10 @@ export default function EndorsePage() {
       const res = await fetch("/api/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, email, name: parentName }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
-      setDevOtp(data.devOtp || "");
       setStep("otp");
     } catch (err: any) {
       setError(err.message);
@@ -86,6 +85,7 @@ export default function EndorsePage() {
           schoolName: school?.name || "",
           parentName,
           phone,
+          email,
           message,
           consent,
           verified: true,
@@ -152,6 +152,17 @@ export default function EndorsePage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="e.g. john@example.com"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Your verification code will be sent to this email</p>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Message (optional)</label>
                   <textarea
                     value={message}
@@ -198,15 +209,10 @@ export default function EndorsePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-1">Verify Your Phone</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-1">Check Your Email</h2>
                 <p className="text-sm text-gray-600">
-                  Enter the 6-digit code sent to {phone}
+                  Enter the 6-digit code sent to {email}
                 </p>
-                {devOtp && (
-                  <p className="text-xs text-amber-600 mt-2">
-                    Dev OTP: {devOtp}
-                  </p>
-                )}
               </div>
               <div className="space-y-4">
                 <input

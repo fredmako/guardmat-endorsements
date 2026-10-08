@@ -3,9 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    const { schoolId, schoolName, parentName, phone, message, consent, verified, referralSource } = await request.json();
+    const { schoolId, schoolName, parentName, phone, email, message, consent, verified, referralSource } = await request.json();
 
-    if (!schoolId || !schoolName || !parentName || !phone || !consent) {
+    if (!schoolId || !schoolName || !parentName || !phone || !email || !consent) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
         school_name: schoolName,
         parent_name: parentName,
         phone,
+        email,
         message: message || null,
         consent,
         verified: true,
